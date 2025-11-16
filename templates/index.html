@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UniMatch Chat</title>
+    <style>
+        /* General body styling */
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f7fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        /* Main container */
+        .container {
+            margin-top: 40px;
+            width: 90%;
+            max-width: 700px;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 0;
+            font-weight: 600;
+        }
+
+        /* Canned question buttons */
+        #canned {
+            margin-bottom: 15px;
+        }
+
+        #canned button {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            margin: 5px 5px 10px 0;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+            transition: all 0.2s ease;
+        }
+
+        #canned button:hover {
+            background: #357ABD;
+            transform: translateY(-2px);
+        }
+
+        /* Chat box styling */
+        #chat-box {
+            background: #f0f2f5;
+            border-radius: 10px;
+            padding: 15px;
+            height: 350px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            box-shadow: inset 0 0 6px rgba(0,0,0,0.1);
+        }
+
+        .msg {
+            margin-bottom: 18px;
+            padding: 10px;
+        }
+
+        .msg strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* Feedback buttons */
+        .feedback-buttons {
+            margin-top: 8px;
+        }
+
+        .feedback-btn {
+            padding: 6px 12px;
+            margin-right: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        .support-btn {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .nosupport-btn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .feedback-btn.selected {
+            opacity: 0.6;
+            box-shadow: inset 0 0 6px rgba(0,0,0,0.2);
+        }
+
+        /* Input row */
+        #input-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        #user-input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+        }
+
+        #char-count {
+            font-size: 12px;
+            color: #666;
+            text-align: right;
+            margin-top: -10px;
+            margin-bottom: 10px;
+        }
+
+        #send-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+            transition: all 0.2s ease;
+        }
+
+        #send-btn:hover {
+            background: #3e8e41;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>UniMatch Chat</h1>
+
+    <!-- Canned Questions -->
+    <div id="canned">
+        <strong>Canned Questions:</strong><br>
+        {% for q in canned_questions %}
+            <button onclick="askQuestion('{{q}}')">{{ q }}</button>
+        {% endfor %}
+    </div>
+
+    <!-- Chat messages -->
+    <div id="chat-box"></div>
+
+    <!-- Character counter -->
+    <div id="char-count">0 / 200</div>
+
+    <!-- Input row -->
+    <div id="input-row">
+        <input
+            type="text"
+            id="user-input"
+            maxlength="200"
+            placeholder="Type your question here..."
+        >
+        <button id="send-btn" onclick="sendQuestion()">Send</button>
+    </div>
+</div>
+
+<script>
+    const MAX_CHARS = 200;
+    const userName = "You";
+    const botName = "UniMatch Assistant";
+
+    // Update character counter live
+    document.getElementById("user-input").addEventListener("input", () => {
+        const length = document.getElementById("user-input").value.length;
+        document.getElementById("char-count").innerText = `${length} / ${MAX_CHARS}`;
+    });
+
+    // Send user question to Flask
+    async function sendQuestion() {
+        const question = document.getElementById("user-input").value;
+        if (!question) return;
+
+        addMessage(userName, question);
+
+        // Clear input
+        document.getElementById("user-input").value = "";
+        document.getElementById("char-count").innerText = `0 / ${MAX_CHARS}`;
+
+        // Fetch response from server
+        const response = await fetch("/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question })
+        });
+
+        const data = await response.json();
+        addMessage(botName, data.answer, true);
+    }
+
+    // Trigger sending canned question
+    function askQuestion(question) {
+        document.getElementById("user-input").value = question;
+        document.getElementById("char-count").innerText = `${question.length} / ${MAX_CHARS}`;
+        sendQuestion();
+    }
+
+    // Add message to chat box
+    function addMessage(sender, message, addFeedback = false) {
+        const chatBox = document.getElementById("chat-box");
+        const id = Date.now();
+
+        let feedbackHTML = "";
+        if (addFeedback) {
+            feedbackHTML = `
+                <div class="feedback-buttons">
+                    <button class="feedback-btn support-btn" onclick="selectFeedback(${id}, 'support')" id="support-${id}">Support</button>
+                    <button class="feedback-btn nosupport-btn" onclick="selectFeedback(${id}, 'nosupport')" id="nosupport-${id}">Don't Support</button>
+                </div>
+            `;
+        }
+
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "msg";
+        msgDiv.innerHTML = `
+            <strong>${sender}:</strong>
+            <span>${message}</span>
+            ${feedbackHTML}
+        `;
+
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Handle feedback button click
+    async function selectFeedback(id, type) {
+        const supportBtn = document.getElementById(`support-${id}`);
+        const noBtn = document.getElementById(`nosupport-${id}`);
+
+        if (supportBtn.classList.contains("selected") || noBtn.classList.contains("selected")){
+            return;
+        }
+
+        // Reset previous selection
+        supportBtn.classList.remove("selected");
+        noBtn.classList.remove("selected");
+
+        // Mark selected
+        if (type === "support") {
+            supportBtn.classList.add("selected");
+        } else {
+            noBtn.classList.add("selected");
+        }
+
+        // Send feedback to backend
+        await fetch("/feedback", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message_id: id, feedback: type })
+        });
+
+        let fdbackResponse = "";
+
+        if (type === "support")
+        {
+            fdbackResponse = "Thank you for your positive feedback!";
+        }
+        else
+        {
+            fdbackResponse = "Im sorry you did not like my response, try asking your question again.";
+        }
+
+        addMessage("ChatGPT",fdbackResponse,false);
+
+    }
+</script>
+
+</body>
+</html>
