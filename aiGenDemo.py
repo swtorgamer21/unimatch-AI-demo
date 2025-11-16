@@ -4,7 +4,7 @@ import openai
 app = Flask(__name__)
 
 # usually i wouldnt hardcode an api key but this is just for the project
-openai.api_key = "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"
+openai.api_key = "OPENAI_API_KEY"
 
 CANNED_QUESTIONS = [
     "What events are happening this week?",
@@ -51,3 +51,4 @@ def feedback():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
