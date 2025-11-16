@@ -1,8 +1,19 @@
 # unimatch-AI-demo
-The front end HTML code as well as the backend code. This requires a virtual enviorment to run.
 
-/nTech Stack:
-/n**Front-End:** HTML (Using the Python Flask library to simulate webpages)
-/n**Back-End:** Python 3.14
-/n**Text Editor / Debugger:** Visual Studio Code
+This repository contains the front-end HTML code as well as the backend code for the UniMatch AI demo.  
+A virtual environment is required to run this project.
+
+---
+
+## Tech Stack
+
+**Front-End:**  
+- HTML (using the Python Flask framework to simulate webpages)
+
+**Back-End:**  
+- Python 3.14
+
+**Text Editor / Debugger:**  
+- Visual Studio Code
+
 
